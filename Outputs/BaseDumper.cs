@@ -7,11 +7,13 @@ namespace ProtoDumper.Outputs {
     public class BaseDumper {
         private List<Proto> Protos;
         private string OutputFolder;
+        private string OutputProtoFolder;
         private bool DumpCmdIdEnums;
 
-        public BaseDumper(List<Proto> protos, string outputFolder, bool dumpCmdIdEnums = false) {
+        public BaseDumper(List<Proto> protos, string outputFolder, string outputProtoFolder, bool dumpCmdIdEnums = false) {
             Protos = protos;
             OutputFolder = outputFolder;
+            OutputProtoFolder = outputProtoFolder;
             DumpCmdIdEnums = dumpCmdIdEnums;
         }
 
@@ -131,7 +133,7 @@ namespace ProtoDumper.Outputs {
             var packetIds = new Dictionary<string, int>();
 
             foreach (var proto in Protos) {
-                DumpToFolder(Path.Combine(OutputFolder, $"{proto.Name}.{fileExtension}"), BuildFile(proto));
+                DumpToFolder(Path.Combine(OutputProtoFolder, $"{proto.Name}.{fileExtension}"), BuildFile(proto));
                 if (proto.CmdID != 0) packetIds.Add(proto.Name, proto.CmdID);
             }
 

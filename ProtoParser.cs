@@ -1,20 +1,24 @@
 ﻿using Mono.Cecil;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ProtoDumper {
     public class ProtoParser {
 
         private string AssemblyPath;
+        private string AssemblyFirstpassPath;
         private string ProtoBase;
         private string RepeatedMessageFieldName;
         private const string RepeatedPrimitiveFieldName = "Google.Protobuf.Collections.RepeatedPrimitiveField`1";
         private const string MapFieldName = "Google.Protobuf.Collections.MapField`2";
         private const string MessageMapFieldName = "Google.Protobuf.Collections.MessageMapField`2";
         private ModuleDefinition Module;
+        private ModuleDefinition ModuleFirstpass;
 
-        public ProtoParser(string assemblyPath, string protoBase, string repeatedMessageFieldName) {
+        public ProtoParser(string assemblyPath, string assemblyFirstpassPath, string protoBase, string repeatedMessageFieldName) {
             AssemblyPath = assemblyPath;
+            AssemblyFirstpassPath = assemblyFirstpassPath;
             ProtoBase = protoBase;
             RepeatedMessageFieldName = repeatedMessageFieldName;
         }
@@ -27,10 +31,27 @@ namespace ProtoDumper {
             var protoBase = Module.GetType(ProtoBase);
 
             if (protoBase == null) {
-                Console.WriteLine("Could not find base class for protos! The assembly might be obfuscated or the name is actually wrong.");
-                Program.ShowHelp();
-                Program.Exit();
-                return null;
+                Console.WriteLine("Could not find proto base class, trying firstpass");
+
+                if(!string.IsNullOrEmpty(AssemblyFirstpassPath)) {
+                    Console.WriteLine("Firstpass assembly specified, trying to find base class");
+                    ModuleFirstpass = ModuleDefinition.ReadModule(AssemblyFirstpassPath);
+                    protoBase = ModuleFirstpass.GetType(ProtoBase);
+
+                    if(protoBase == null) {
+                        Console.WriteLine("Base class not found! exiting");
+                        Program.ShowHelp();
+                        Program.Exit();
+                        return null;
+                    } else {
+                        Console.WriteLine("Proto base class found!");
+                    }
+                } else {
+                    Console.WriteLine("Firstpass assembly not specified, can't try anymore. exiting.");
+                    Program.ShowHelp();
+                    Program.Exit();
+                    return null;
+                }
             }
 
             var protos = new List<Proto>();

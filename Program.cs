@@ -25,13 +25,14 @@ namespace ProtoDumper {
         [STAThread]
         public static void Main(string[] args) {
             var assemblyPath = "";
+            var assemblyFirstpassPath = "";
             var outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Output") + "\\";
             ExportType exportType = ExportType.Proto;
             var exportFileExtension = "";
             var dontDeleteOldProtos = false;
             var dumpCmdIdEnum = false;
-            var protoBase = "Google.Protobuf.MessageBase";
-            var repeatedMessageFieldClass = "Google.Protobuf.Collections.RepeatedMessageField`1";
+            var protoBase = "Google.Protobuf.IMessage";
+            var repeatedMessageFieldClass = "Google.Protobuf.Collections.RepeatedField`1";
 
             // If args are empty and assembly path is not defined, popup asking for the assembly
             if (args.Length == 0 && assemblyPath == "") {
@@ -40,6 +41,15 @@ namespace ProtoDumper {
                 Console.WriteLine("Please select the Assembly with Proto definitions.");
                 if (ofd.ShowDialog() == DialogResult.OK) {
                     assemblyPath = ofd.FileName;
+                }
+            }
+            // Assembly-CSharp-firstpass.dll
+            if(args.Length == 0 && assemblyFirstpassPath == "") {
+                var ofd = new OpenFileDialog();
+                ofd.Filter = "Assembly-CSharp-firstpass.dll|*";
+                Console.WriteLine("Please select the first pass Assembly with Proto definitions. If there's no firstpass assembly, just close the file dialog.");
+                if(ofd.ShowDialog() == DialogResult.OK) {
+                    assemblyFirstpassPath = ofd.FileName;
                 }
             }
             // Read args
@@ -101,7 +111,7 @@ namespace ProtoDumper {
             }
 
             Console.WriteLine("Parsing protos...");
-            var protoParser = new ProtoParser(assemblyPath, protoBase, repeatedMessageFieldClass);
+            var protoParser = new ProtoParser(assemblyPath, assemblyFirstpassPath, protoBase, repeatedMessageFieldClass);
             var protos = protoParser.Parse();
             Console.WriteLine($"Proto parsing done! {protos.Count} proto definitions found!");
 
@@ -115,17 +125,22 @@ namespace ProtoDumper {
             Console.WriteLine($"Dumping to folder: {outputDirectory.FullName}");
 
             Directory.CreateDirectory(outputDirectory.FullName);
-            // outputDirectory.Create();
 
             switch (exportType) {
                 case ExportType.TypeScript:
                     Console.WriteLine("Using export type \"TypeScript\".");
-                    var dumperTs = new TypeScriptDumper(protos, outputDirectory.FullName);
+                    var outputDirectoryTs = new DirectoryInfo($"{outputPath}\\ts");
+                    Directory.CreateDirectory(outputDirectoryTs.FullName);
+
+                    var dumperTs = new TypeScriptDumper(protos, outputDirectory.FullName, outputDirectoryTs.FullName);
                     dumperTs.Dump(exportFileExtension == "" ? "ts" : exportFileExtension);
                     break;
                 case ExportType.Proto:
                     Console.WriteLine("Using export type \"Proto\".");
-                    var dumperProto = new BaseDumper(protos, outputDirectory.FullName, dumpCmdIdEnum);
+                    var outputDirectoryProto = new DirectoryInfo($"{outputPath}\\proto");
+                    Directory.CreateDirectory(outputDirectoryProto.FullName);
+
+                    var dumperProto = new BaseDumper(protos, outputDirectory.FullName, outputDirectoryProto.FullName, dumpCmdIdEnum);
                     dumperProto.Dump(exportFileExtension == "" ? "proto" : exportFileExtension);
                     break;
             }

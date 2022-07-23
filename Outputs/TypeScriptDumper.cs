@@ -9,10 +9,12 @@ namespace ProtoDumper.Outputs {
     public class TypeScriptDumper : BaseDumper {
         private List<Proto> Protos;
         private string OutputFolder;
+        private string OutputTsFolder;
 
-        public TypeScriptDumper(List<Proto> protos, string outputFolder) : base(protos, outputFolder) {
+        public TypeScriptDumper(List<Proto> protos, string outputFolder, string outputTsFolder) : base(protos, outputFolder, outputTsFolder) {
             Protos = protos;
             OutputFolder = outputFolder;
+            OutputTsFolder = outputTsFolder;
         }
 
         public override string BuildFile(Proto proto) {
